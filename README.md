@@ -35,6 +35,10 @@ cmake .. -DERIVEJSON_BUILD_TESTS=ON
 Also, if you plan to build with tests, you need to call the folowing commands to
 load the external cmake module.
 
+```sh
+git submodule init
+git submodule update
+```
 
 ### Examples
 

@@ -40,3 +40,6 @@ library_boost
 
 # OpenSSL
 library_openssl
+
+#QtCreator
+CMakeLists.txt.user

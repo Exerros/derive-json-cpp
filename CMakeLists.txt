@@ -1,51 +1,63 @@
-cmake_minimum_required(VERSION 3.1)
-project(derivejson)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+project(derivejson VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
+#-------------------------------------------------------------------------------
 
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/catch/single_include)
-set(CATCH_INCLUDE_DIR ${CATCH_INCLUDE_DIR} PARENT_SCOPE)
-set(JSON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/json/src)
-set(JSON_INCLUDE_DIR ${JSON_INCLUDE_DIR} PARENT_SCOPE)
-set(PREPROCESSOR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/preprocessor/include)
-set(PREPROCESSOR_INCLUDE_DIR ${PREPROCESSOR_INCLUDE_DIR} PARENT_SCOPE)
-set(DERIVEJSON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(DERIVEJSON_INCLUDE_DIR ${DERIVEJSON_INCLUDE_DIR} PARENT_SCOPE)
+option(DERIVEJSON_BUILD_EXAMPLE OFF)
+option(DERIVEJSON_BUILD_TESTS   OFF)
 
-macro(toggle_option OPTION_NAME OPTION_TEXT OPTION_DEFAULT)
-    option(${OPTION_NAME} ${OPTION_TEXT} ${OPTION_DEFAULT})
-    if(DEFINED ENV{${OPTION_NAME}})
-        # Allow setting the option through an environment variable
-        set(${OPTION_NAME} $ENV{${OPTION_NAME}})
-    endif()
-    if(${OPTION_NAME})
-        add_definitions(-D${OPTION_NAME})
-    endif()
-    message(STATUS "  ${OPTION_NAME}: ${${OPTION_NAME}}")
-endmacro()
+#-------------------------------------------------------------------------------
 
-include_directories(
-  ${CATCH_INCLUDE_DIR}
-  ${JSON_INCLUDE_DIR}
-  ${PREPROCESSOR_INCLUDE_DIR}
-  ${DERIVEJSON_INCLUDE_DIR}
-  )
+set(DERIVEJSON_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(DERIVEJSON_EXAMPLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/example")
+set(DERIVEJSON_TESTS_DIR   "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+set(DERIVEJSON_CMAKE_DIR   "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
-toggle_option(BUILD_DERIVEJSON_TESTS "Set to ON to build derivejson tests." ON)
-toggle_option(BUILD_DERIVEJSON_EXEC "Set to ON to build DERIVEJSON exec." ON)
+#-------------------------------------------------------------------------------
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14")
+find_package(nlohmann_json 3.2.0 REQUIRED)
+find_package(Boost 1.76 REQUIRED COMPONENTS system)
 
-if(BUILD_DERIVEJSON_EXEC)
-  add_executable(derivejson_example example/example.cc)
+if(DERIVEJSON_BUILD_TESTS)
+    find_package(GTest 1.10 REQUIRED)
 endif()
 
-if(BUILD_DERIVEJSON_TESTS)
-  add_executable(derivejson_tests test/tests.cc)
-  enable_testing()
-  add_test(NAME Tests COMMAND derivejson_tests)
+#-------------------------------------------------------------------------------
+
+add_library(${PROJECT_NAME} INTERFACE)
+add_library(nlohmann_json::derivejson ALIAS ${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} INTERFACE
+    $<BUILD_INTERFACE:${DERIVEJSON_INCLUDE_DIR}>)
+
+target_link_libraries(${PROJECT_NAME} INTERFACE
+    nlohmann_json::nlohmann_json
+    Boost::system)
+
+#-------------------------------------------------------------------------------
+
+if(DERIVEJSON_BUILD_EXAMPLE)
+    add_executable(example "${DERIVEJSON_EXAMPLE_DIR}/example.cpp")
+
+    set_target_properties(example PROPERTIES
+        LINKER_LANGUAGE CXX
+        CXX_STANDARD 17
+        BUILD_TYPE DEBUG
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/example)
+
+    target_link_libraries(example ${PROJECT_NAME})
+
 endif()
 
-if(BUILD_DERIVEJSON_EXEC AND BUILD_DERIVEJSON_TESTS)
-  add_dependencies(derivejson_example derivejson_tests)
+#-------------------------------------------------------------------------------
+
+if(DERIVEJSON_BUILD_TESTS)
+    include(CTest)
+    enable_testing()
+
+    set(CTEST_SOURCE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests")
+    set(LIBS_TO_LINK ${PROJECT_NAME} gtest pthread)
+
+    include("${DERIVEJSON_CMAKE_DIR}/functions/test_builder.cmake")
+    build_tests(${DERIVEJSON_TESTS_DIR} ${LIBS_TO_LINK})
 endif()

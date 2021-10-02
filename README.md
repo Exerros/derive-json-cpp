@@ -6,12 +6,12 @@
 
 ## Getting Started
 
-###Required
+### Required
 
-**CMake** 3.10.0 or higher for building
-**nlohmann_json** 3.2.0
-**Boost** 1.76 or higher
-**GoogleTest** 1.10 for tests
+**CMake** 3.10.0 or higher for building  
+**nlohmann_json** 3.2.0  
+**Boost** 1.76 or higher  
+**GoogleTest** 1.10 for tests  
 
 ### Build
 
@@ -29,7 +29,7 @@ For build with example or tests, add key to cmake call.
 
 ```sh
 cmake .. -DDERIVEJSON_BUILD_EXAMPLE=ON
-cmake .. -DERIVEJSON_BUILD_TESTS=ON
+cmake .. -DDERIVEJSON_BUILD_TESTS=ON
 ```
 
 Also, if you plan to build with tests, you need to call the folowing commands to
